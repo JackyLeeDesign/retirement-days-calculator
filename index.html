@@ -1,0 +1,149 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>退休天數計算器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        input {
+            padding: 10px;
+            margin: 10px;
+            width: 200px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>退休天數計算器</h1>
+        <div>
+            <label for="age">你的年齡：</label><br>
+            <input type="number" id="age" placeholder="輸入年齡" min="0" required>
+        </div>
+        <div>
+            <label for="retireAge">預計退休年齡：</label><br>
+            <input type="number" id="retireAge" placeholder="輸入退休年齡" min="1" required>
+        </div>
+        <button onclick="calculateDays()">計算距離退休天數</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function calculateDays() {
+            // 獲取輸入值
+            const age = parseInt(document.getElementById('age').value);
+            const retireAge = parseInt(document.getElementById('retireAge').value);
+            const resultDiv = document.getElementById('result');
+
+            // 驗證輸入
+            if (isNaN(age) || isNaN(retireAge)) {
+                resultDiv.innerHTML = '請輸入有效的年齡和退休年齡！';
+                return;
+            }
+
+            if (age < 0) {
+                resultDiv.innerHTML = '年齡不能為負數！';
+                return;
+            }
+
+            if (retireAge <= age) {
+                resultDiv.innerHTML = '退休年齡必須大於當前年齡！';
+                return;
+            }
+
+            // 獲取當前年份
+            const currentDate = new Date();
+            const currentYear = currentDate.getFullYear();
+
+            // 計算預計退休的年份
+            const yearsUntilRetirement = retireAge - age;
+            const retireYear = currentYear + yearsUntilRetirement;
+
+            // 假設退休日期為退休年份的 1 月 1 日
+            const retireDate = new Date(retireYear, 0, 1);
+
+            // 計算天數差異
+            const timeDiff = retireDate - currentDate;
+            const daysUntilRetirement = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+            // 驗證退休天數是否為負數
+            if (daysUntilRetirement <= 0) {
+                resultDiv.innerHTML = '計算結果無效，請檢查輸入！';
+                return;
+            }
+
+            // 顯示結果
+            resultDiv.innerHTML = `距離退休還有 ${daysUntilRetirement} 天！`;
+        }
+    </script>
+</body>
+</html>
