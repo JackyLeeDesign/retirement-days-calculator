@@ -38,24 +38,30 @@
         return gk_fileData[filename] || "";
         }
         </script><!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>退休天數計算器</title>
+    <title>Retirement Days Calculator</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 20px auto;
+            margin: 0;
             padding: 20px;
-            text-align: center;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            position: relative;
         }
         .container {
             background-color: #f9f9f9;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            display: inline-block;
         }
         input {
             padding: 10px;
@@ -71,6 +77,7 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
+            margin: 5px;
         }
         button:hover {
             background-color: #45a049;
@@ -80,69 +87,138 @@
             font-size: 18px;
             font-weight: bold;
         }
+        .lang-switch {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .lang-switch button {
+            background-color: #007BFF;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+        .lang-switch button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
+    <div class="lang-switch">
+        <button onclick="switchLanguage('en')">English</button>
+        <button onclick="switchLanguage('zh')">中文</button>
+    </div>
     <div class="container">
-        <h1>退休天數計算器</h1>
+        <h1 id="title">Retirement Days Calculator</h1>
         <div>
-            <label for="age">你的年齡：</label><br>
-            <input type="number" id="age" placeholder="輸入年齡" min="0" required>
+            <label for="age" id="ageLabel">Your Age:</label><br>
+            <input type="number" id="age" placeholder="Enter your age" min="0" required>
         </div>
         <div>
-            <label for="retireAge">預計退休年齡：</label><br>
-            <input type="number" id="retireAge" placeholder="輸入退休年齡" min="1" required>
+            <label for="retireAge" id="retireAgeLabel">Retirement Age:</label><br>
+            <input type="number" id="retireAge" placeholder="Enter retirement age" min="1" required>
         </div>
-        <button onclick="calculateDays()">計算距離退休天數</button>
+        <button onclick="calculateDays()" id="calculateBtn">Calculate Days to Retirement</button>
         <div id="result"></div>
     </div>
 
     <script>
+        // Language resources
+        const translations = {
+            en: {
+                title: "Retirement Days Calculator",
+                ageLabel: "Your Age:",
+                retireAgeLabel: "Retirement Age:",
+                calculateBtn: "Calculate Days to Retirement",
+                placeholderAge: "Enter your age",
+                placeholderRetireAge: "Enter retirement age",
+                invalidInput: "Please enter valid age and retirement age!",
+                negativeAge: "Age cannot be negative!",
+                invalidRetireAge: "Retirement age must be greater than current age!",
+                invalidResult: "Calculation result is invalid, please check your input!",
+                result: "Days until retirement: {days}"
+            },
+            zh: {
+                title: "退休天數計算器",
+                ageLabel: "你的年齡：",
+                retireAgeLabel: "預計退休年齡：",
+                calculateBtn: "計算距離退休天數",
+                placeholderAge: "輸入年齡",
+                placeholderRetireAge: "輸入退休年齡",
+                invalidInput: "請輸入有效的年齡和退休年齡！",
+                negativeAge: "年齡不能為負數！",
+                invalidRetireAge: "退休年齡必須大於當前年齡！",
+                invalidResult: "計算結果無效，請檢查輸入！",
+                result: "距離退休還有 {days} 天！"
+            }
+        };
+
+        // Default language
+        let currentLang = 'en';
+
+        // Function to switch language
+        function switchLanguage(lang) {
+            currentLang = lang;
+            document.getElementById('title').textContent = translations[lang].title;
+            document.getElementById('ageLabel').textContent = translations[lang].ageLabel;
+            document.getElementById('retireAgeLabel').textContent = translations[lang].retireAgeLabel;
+            document.getElementById('calculateBtn').textContent = translations[lang].calculateBtn;
+            document.getElementById('age').placeholder = translations[lang].placeholderAge;
+            document.getElementById('retireAge').placeholder = translations[lang].placeholderRetireAge;
+            document.getElementById('result').textContent = '';
+            document.documentElement.lang = lang === 'zh' ? 'zh-TW' : 'en';
+        }
+
+        // Initialize with English
+        switchLanguage('en');
+
         function calculateDays() {
-            // 獲取輸入值
+            // Get input values
             const age = parseInt(document.getElementById('age').value);
             const retireAge = parseInt(document.getElementById('retireAge').value);
             const resultDiv = document.getElementById('result');
 
-            // 驗證輸入
+            // Validate inputs
             if (isNaN(age) || isNaN(retireAge)) {
-                resultDiv.innerHTML = '請輸入有效的年齡和退休年齡！';
+                resultDiv.textContent = translations[currentLang].invalidInput;
                 return;
             }
 
             if (age < 0) {
-                resultDiv.innerHTML = '年齡不能為負數！';
+                resultDiv.textContent = translations[currentLang].negativeAge;
                 return;
             }
 
             if (retireAge <= age) {
-                resultDiv.innerHTML = '退休年齡必須大於當前年齡！';
+                resultDiv.textContent = translations[currentLang].invalidRetireAge;
                 return;
             }
 
-            // 獲取當前年份
+            // Get current year
             const currentDate = new Date();
             const currentYear = currentDate.getFullYear();
 
-            // 計算預計退休的年份
+            // Calculate retirement year
             const yearsUntilRetirement = retireAge - age;
             const retireYear = currentYear + yearsUntilRetirement;
 
-            // 假設退休日期為退休年份的 1 月 1 日
+            // Assume retirement date is January 1st of the retirement year
             const retireDate = new Date(retireYear, 0, 1);
 
-            // 計算天數差異
+            // Calculate days difference
             const timeDiff = retireDate - currentDate;
             const daysUntilRetirement = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
 
-            // 驗證退休天數是否為負數
+            // Validate result
             if (daysUntilRetirement <= 0) {
-                resultDiv.innerHTML = '計算結果無效，請檢查輸入！';
+                resultDiv.textContent = translations[currentLang].invalidResult;
                 return;
             }
 
-            // 顯示結果
-            resultDiv.innerHTML = `距離退休還有 ${daysUntilRetirement} 天！`;
+            // Display result
+            resultDiv.textContent = translations[currentLang].result.replace('{days}', daysUntilRetirement);
         }
     </script>
 </body>
